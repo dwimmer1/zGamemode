@@ -96,19 +96,6 @@ end)
 
 zwischen = 0.0
 
-function timee()
-    print("drinne")
-
-    if zwischen >= Time then
-        print("Bei der operation drinne")
-
-        hook.Add("HUDPaint", "DrawHighscore", function()
-            draw.RoundedBox(20, ScrW() - 500, 0, 500, 50, Color(0, 0, 0, 250))
-            draw.SimpleText("Aktuelle Bestzeit: " .. Time, "MainFont", ScrW() - 450, 10, Color(169, 169, 169))
-        end)
-    end
-end
-
 net.Receive("Eye", function(ply, ent)
     local Check = net.ReadBool()
 
@@ -161,7 +148,6 @@ net.Receive("Eye", function(ply, ent)
                 end)
 
                 if KillCount == 6 then
-                    timee(Time, zwischen)
                     LocalPlayer():EmitSound("level")
                     timer.Stop("Timer0")
                     net.Start("timeSend")
@@ -174,11 +160,6 @@ net.Receive("Eye", function(ply, ent)
             end
         end)
     end
-end)
-
-hook.Add("HUDPaint", "DrawHighscore", function()
-    draw.RoundedBox(20, ScrW() - 500, 0, 500, 50, Color(0, 0, 0, 250))
-    draw.SimpleText("Aktuelle Bestzeit: 0", "MainFont", ScrW() - 450, 10, Color(169, 169, 169))
 end)
 
 --draw.SimpleText("Aktuelle Bestzeit: " .. PreTime, "MainFont",
