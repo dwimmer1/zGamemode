@@ -7,6 +7,7 @@ surface.CreateFont("MainFont", {
 local NPCinfoServer = ""
 Check = 0
 currLevel = "0"
+local TimeString = os.date("%d.%m.%Y - %H:%M:%S", Timestamp)
 
 sound.Add({
     name = "death",
@@ -14,7 +15,7 @@ sound.Add({
     volume = 120.0,
     level = 100,
     pitch = {95, 110},
-    sound = "sound/vehicles/enzo/cringe.wav"
+    sound = "vehicles/enzo/cringe.wav"
 })
 
 sound.Add({
@@ -45,7 +46,8 @@ hook.Add("HUDPaint", "DrawFull", function()
 end)
 
 net.Receive("openlogs", function(len)
-    local f = file.Open("logsys/logs.txt", "r", "DATA") --- neues file öffnen und schließen
+    local f = file.Open("logsys/serverlogs.txt", "r", "DATA") --- neues file öffnen und schließen
+    local f2 = file.Open("logsys/playerlogs.txt", "r", "DATA")
     local frame = vgui.Create("DFrame")
     frame:SetSize(600, 430)
     frame:Center()
@@ -92,15 +94,25 @@ net.Receive("openlogs", function(len)
     end
 
     local infoServer = vgui.Create("DLabel", LogsList1)
-    infoServer:SetPos(10, 10)
+    infoServer:SetPos(10, -190)
     infoServer:SetSize(700, 900)
-    infoServer:SetTextColor(Color(255, 0, 0))
+    infoServer:SetTextColor(Color(192, 192, 192))
     infoServer:SetText(f:Read(f:Size()))
+
+    infoServer.OnDepressed = function(s)
+        LogsList1:CopySelected()
+    end
+
     local infoPly = vgui.Create("DLabel", LogsList2)
-    infoPly:SetPos(10, 10)
+    infoPly:SetPos(10, -190)
     infoPly:SetSize(700, 900)
-    infoPly:SetTextColor(Color(255, 0, 0))
-    infoPly:SetText(f:Read(f:Size()))
+    infoPly:SetTextColor(Color(192, 192, 192))
+    infoPly:SetText(f2:Read(f2:Size()))
+
+    infoPly.OnDepressed = function(s)
+        LogsList2:CopySelected()
+    end
+
     local ClosButton = vgui.Create("DButton", frame)
     ClosButton:SetText("Close")
     ClosButton:SetPos(510, 6)
@@ -109,7 +121,9 @@ net.Receive("openlogs", function(len)
     ClosButton.DoClick = function()
         frame:Close()
         print(f:Read(f:Size()))
+        print(f2:Read(f2:Size()))
         f:Close()
+        f2:Close()
     end
 
     if frame:OnClose() then
@@ -121,7 +135,21 @@ end)
 
 zwischen = 0.0
 
-net.Receive("Eye", function(ply, ent)
+net.Receive("SendLogs", function(len, ply)
+    local str = net.ReadString()
+
+    if str == "PlayerInitial" then
+        file.Append("logsys/playerlogs.txt", "\n[ " .. TimeString .. "] " .. LocalPlayer():Name() .. "" .. " (" .. LocalPlayer():SteamID() .. ") hat sich auf den Server verbunden.\n")
+    elseif str == "NPCSpawns" then
+        file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] NPC Spawned\n")
+    elseif str == "PropSpawn" then
+        file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] Prop successfully Spawned\n")
+    elseif str == "PlayerDC" then
+        file.Append("logsys/playerlogs.txt", LocalPlayer():Name() .. "Hat den Server verlassen")
+    end
+end)
+
+net.Receive("Eye", function(ply, len, ent)
     local Check = net.ReadBool()
 
     --local NPCHealth = net.ReadUInt(8) -- Nein
@@ -154,7 +182,6 @@ net.Receive("Eye", function(ply, ent)
             if KillCount == 1 then
                 timer.Create("Timer0", 0.1, 0, function()
                     Time = Time + 0.1
-                    zwischen = zwischen + 0.1
                 end)
             end
 
