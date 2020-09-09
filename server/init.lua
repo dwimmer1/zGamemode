@@ -1,9 +1,7 @@
 util.AddNetworkString("Eye")
 util.AddNetworkString("Kills")
 util.AddNetworkString("timeSend")
-util.AddNetworkString("infoclose")
 util.AddNetworkString("openlogs")
-util.AddNetworkString("TimeToClient")
 resource.AddFile("vehicles/enzo/cringe.wav")
 resource.AddFile("vehicles/enzo/levelup.wav")
 resource.AddWorkshop("128089118") --M9K Weapons
@@ -21,70 +19,74 @@ hook.Add("PlayerInitialSpawn", "PlayerConnect", function(plyy)
         for k, v in pairs(player.GetAll()) do
             v:ChatPrint("Um das Spiel zu starten musst du !start in den Chat schreiben")
         end
-
-        file.Append("logsys/logs.txt", "\n[ " .. TimeString .. "] " .. plyy:Name() .. "" .. " (" .. plyy:SteamID() .. ") hat sich auf den Server verbunden.\n")
+        file.Append("logsys/serverlogs.txt", "\n[ " .. TimeString .. "] " .. plyy:Name() .. "" .. " (" .. plyy:SteamID() .. ") hat sich auf den Server verbunden.\n")
         plyy:StripWeapons()
         plyy:Spectate(6)
     end)
 end)
 
-hook.Add("PlayerSpawn", "PlayerSpec", function(ply)
-    ply:Spectate(6)
-end)
-
---elseif string.lower(text) == "cleanup" then
-hook.Add("PlayerSay", "StartCommand", function(ply, text, ent)
-    if string.lower(text) == "!sa" and ply:Team() ~= TEAM_SHOOTER then
-        ply:changeTeam(TEAM_SHOOTER, true)
-        roundStat = 1
-        IsSpawning = 1
-        ply:SelectWeapon("m9k_m16a4_acog")
-        ply:GiveAmmo(200, "smg1", true)
-        ply:GiveAmmo(300, "m9k_ammo_ar2", true)
-        Main(ply)
-        ply:UnSpectate()
-        test = 1
-        CheckIfSpawned = 0
-        ply:SetModel("models/Police.mdl")
-        AbleToPlay = false
-
-        return ""
-    elseif string.lower(text) == "!sa" and ply:Team() == TEAM_SHOOTER then
-        roundStat = 1
-        IsSpawning = 1
-        ply:Give("m9k_m16a4_acog", false)
-        ply:SelectWeapon("m9k_m16a4_acog")
-        ply:GiveAmmo(200, "smg1", true)
-        ply:GiveAmmo(300, "m9k_ammo_ar2", true)
-        Main(ply)
-        ply:UnSpectate()
-        test = 1
-        CheckIfSpawned = 0
-
-        return ""
-    elseif string.lower(text) == "!logs" then
-        net.Start("openlogs")
-        net.Send(ply)
-
-        return ""
-    elseif string.lower(text) == "!reset" then
-        ply:ChatPrint("Du hast dich erfolgreich zurückgesetzt")
-        KillCount = 0
-        roundStat = 0
-        IsSpawning = 0
-        CheckIfSpawned = 0
-        NPCSpawnCount = 6
-        ply:Spectate(6)
+local function Spawn(ply)
+    timer.Simple(1, function()
         ply:StripWeapons()
-        ply:SelectWeapon("")
-        prop:Remove()
-        game.CleanUpMap()
+        ply:Spectate(6)
+    end)
+end
 
-        -- net.Start("infoclose")
-        -- net.Send(ply)
-        return ""
-    end
-end)
+hook.Add("PlayerSpawn", "SpawnPlayer", Spawn)
+
+if (AbleToPlay) then
+    hook.Add("PlayerSay", "StartCommand", function(ply, text, ent)
+        if string.lower(text) == "!sa" and ply:Team() ~= TEAM_SHOOTER then
+            ply:changeTeam(TEAM_SHOOTER, true)
+            roundStat = 1
+            IsSpawning = 1
+            ply:SelectWeapon("m9k_m16a4_acog")
+            ply:GiveAmmo(200, "smg1", true)
+            ply:GiveAmmo(300, "m9k_ammo_ar2", true)
+            Main(ply)
+            ply:UnSpectate()
+            CheckIfSpawned = 0
+            ply:SetModel("models/Police.mdl")
+            AbleToPlay = false
+
+            return ""
+        elseif string.lower(text) == "!sa" and ply:Team() == TEAM_SHOOTER then
+            roundStat = 1
+            IsSpawning = 1
+            ply:Give("m9k_m16a4_acog", false)
+            ply:SelectWeapon("m9k_m16a4_acog")
+            ply:GiveAmmo(200, "smg1", true)
+            ply:GiveAmmo(300, "m9k_ammo_ar2", true)
+            Main(ply)
+            ply:UnSpectate()
+            CheckIfSpawned = 0
+            AbleToPlay = false
+
+            return ""
+        elseif string.lower(text) == "!logs" then
+            net.Start("openlogs")
+            net.Send(ply)
+
+            return ""
+        elseif string.lower(text) == "!reset" then
+            ply:ChatPrint("Du hast dich erfolgreich zurückgesetzt")
+            KillCount = 0
+            roundStat = 0
+            IsSpawning = 0
+            CheckIfSpawned = 0
+            NPCSpawnCount = 6
+            ply:Spectate(6)
+            ply:StripWeapons()
+            ply:SelectWeapon("")
+            prop:Remove()
+            game.CleanUpMap()
+            timer.Stop("NpcSpawn")
+            Time = 0
+
+            return ""
+        end
+    end)
+end
 
 function reset(attacker)
     attacker:ChatPrint("Du wurdest zurückgesetzt")
@@ -98,6 +100,7 @@ function reset(attacker)
     attacker:SelectWeapon("")
     attacker:Remove()
     game.CleanUpMap()
+    AbleToPlay = true
 end
 
 --local ZufallsPlayer = math.random(1, #player.GetAll())
@@ -113,7 +116,7 @@ function Main(ply)
 
     if roundStat == 1 and IsSpawning == 1 then
         ply:UnSpectate()
-        file.Append("logsys/logs.txt", " [" .. TimeString .. "] Level 1 wurde von " .. ply:Name() .. " gestartet\n")
+        file.Append("logsys/serverlogs.txt", " [ " .. TimeString .. "] Level 1 wurde von " .. ply:Name() .. " gestartet\n")
         ply:Freeze(true)
         ply:SetPos(Vector(23.519316, 178.790863, -83.970474)) -- Player TP 
         net.Start("Eye")
@@ -134,7 +137,7 @@ function Main(ply)
 
             for i = 1, 2 do
                 local RandomXYPos = Vector(math.random(-332, -850), math.random(-150, 400), 1)
-                file.Append("logsys/logs.txt", "[ " .. TimeString .. "] NPC Spawned\n")
+                file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] NPC Spawned\n")
                 NPC = ents.Create(table.Random(PlayerModels))
                 NPC:SetPos(RandomXYPos)
                 NPC:DropToFloor()
@@ -154,6 +157,10 @@ function Main(ply)
                     print("Alle NPCs sind erfolgreich gespawnt")
                     ply:SetWalkSpeed(200)
                     timer.Remove("NpcSpawn")
+                elseif NPCSpawnCount > 6 then
+                    ply:PrintMessage(HUD_PRINTCENTER, "Fehler")
+                    reset()
+                    game.CleanUpMap()
                 end
             end
         end)
@@ -180,7 +187,7 @@ function Main(ply)
 
         if CheckIfSpawned ~= 1 then
             SpawnTableFunction()
-            file.Append("logsys/logs.txt", "[ " .. TimeString .. "] Prop successfully Spawned\n")
+            file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] Prop successfully Spawned\n")
         else
             print("Prop already spawned")
         end
@@ -191,7 +198,7 @@ function Main(ply)
             hook.Add("PlayerSay", "level2Start", function(plyy, text2, ent)
                 if string.lower(text2) == "!level2" then
                     plyy:ChatPrint("LEVEL 2 : Die Zeit beginnt wenn du den ersten NPC getötet hast.")
-                    file.Append("logsys/logs.txt", "[ " .. TimeString .. "] Level 2 wurde von " .. plyy:Name() .. " gestartet \n")
+                    file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] Level 2 wurde von " .. plyy:Name() .. " gestartet \n")
                     plyy:Freeze(true)
                     plyy:Give("m9k_fal", true)
 
@@ -239,7 +246,7 @@ function Main(ply)
 
         hook.Add("OnNPCKilled", "Kills", function(victim, attacker, weapon)
             KillCount = KillCount + 1
-            file.Append("logsys/logs.txt", "[ " .. TimeString .. "] " .. victim:GetClass() .. " wurde von " .. attacker:GetName() .. " mit einer " .. ply:GetActiveWeapon():GetClass() .. " getötet.\n")
+            file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] " .. victim:GetClass() .. " wurde von " .. attacker:GetName() .. " mit einer " .. ply:GetActiveWeapon():GetClass() .. " getötet.\n")
             net.Start("Kills")
             net.WriteUInt(KillCount, 4)
             net.WriteString("TimeStart")
@@ -255,12 +262,12 @@ function Main(ply)
         end)
 
         hook.Add("EntityTakeDamage", "NPCDamage", function(target, dmginfo)
-            if (target:IsNPC()) then end --  file.Append("logsys/logs.txt", "[ " .. TimeString .. "] " .. NPC:GetClass() .. " hat " .. dmginfo:GetDamage() .. " Schaden von der Waffe: " .. ply:GetActiveWeapon() .. " bekommen\n")
+            if (target:IsNPC()) then end --  file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] " .. NPC:GetClass() .. " hat " .. dmginfo:GetDamage() .. " Schaden von der Waffe: " .. ply:GetActiveWeapon() .. " bekommen\n")
         end)
 
         hook.Add("PlayerDisconnected", "PlayerDC", function(plyy)
             prop:Remove()
-            file.Append("logsys/logs.txt", plyy:Name() .. "Hat den Server verlassen")
+            file.Append("logsys/serverlogs.txt", plyy:Name() .. "Hat den Server verlassen")
         end)
     end
 
