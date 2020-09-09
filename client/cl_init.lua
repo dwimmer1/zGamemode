@@ -1,10 +1,10 @@
 surface.CreateFont("MainFont", {
-    font = "Arial",
+    font = "Tahoma",
     size = 29,
     weight = 500,
 })
 
-local NPCINFO = ""
+local NPCinfoServer = ""
 Check = 0
 currLevel = "0"
 
@@ -14,7 +14,7 @@ sound.Add({
     volume = 120.0,
     level = 100,
     pitch = {95, 110},
-    sound = "vehicles/enzo/cringe.wav"
+    sound = "sound/vehicles/enzo/cringe.wav"
 })
 
 sound.Add({
@@ -26,18 +26,26 @@ sound.Add({
     sound = "vehicles/enzo/levelup.wav"
 })
 
+hook.Add("Initialize", "Datei", function()
+    if not file.Exists("logsys", "DATA") then
+        file.CreateDir("logsys")
+        file.Write("logsys/serverlogs.txt", "------------------------ Server Logs ------------------------\n")
+        file.Write("logsys/playerlogs.txt", "------------------------ Player Logs ------------------------\n")
+    end
+end)
+
 hook.Add("HUDPaint", "DrawFull", function()
     draw.RoundedBox(20, 0, 0, 700, 50, Color(0, 0, 0, 250))
-    --draw.SimpleText("Infos:", "MainFont", 15, 10, Color(255, 0, 0))
+    --draw.SimpleText("infoServers:", "MainFont", 15, 10, Color(255, 0, 0))
     draw.SimpleText("Kills: ", "MainFont", 15, 10, Color(192, 192, 192))
-    draw.SimpleText("NPC: " .. NPCINFO, "MainFont", 140, 10, Color(192, 192, 192))
+    draw.SimpleText("NPC: " .. NPCinfoServer, "MainFont", 140, 10, Color(192, 192, 192))
     -- draw.SimpleText("NPC Health: ", "MainFont", 275, 10, Color(144, 238, 144))
     draw.SimpleText("Ver. Zeit: ", "MainFont", 325, 10, Color(192, 192, 192))
     draw.SimpleText("Level: " .. currLevel, "MainFont", 545, 10, Color(192, 192, 192))
 end)
 
 net.Receive("openlogs", function(len)
-    local f = file.Open("logsys/logs.txt", "r", "DATA")
+    local f = file.Open("logsys/logs.txt", "r", "DATA") --- neues file öffnen und schließen
     local frame = vgui.Create("DFrame")
     frame:SetSize(600, 430)
     frame:Center()
@@ -51,9 +59,21 @@ net.Receive("openlogs", function(len)
         draw.RoundedBox(12, 2, 2, w - 4, h - 4, Color(0, 0, 0, 100))
     end
 
+    local MainSheet = vgui.Create("DPropertySheet", frame)
+    MainSheet:Dock(FILL)
+
+    MainSheet.Paint = function(s, w, h)
+        surface.SetDrawColor(105, 105, 105, 230)
+        surface.DrawRect(12, 0, 0, w, h)
+    end
+
     local LogsList1 = vgui.Create("DScrollPanel", frame)
     LogsList1:Dock(FILL)
+    local LogsList2 = vgui.Create("DScrollPanel", frame)
+    LogsList2:Dock(FILL)
     local sbar = LogsList1:GetVBar() --ScrollBar Farben
+    MainSheet:AddSheet("ServerLogs", LogsList1, "icon16/book.png", false, false, "Server Logs")
+    MainSheet:AddSheet("PlayerLogs", LogsList2, "icon16/book.png", false, false, "Player Things")
 
     function sbar:Paint(w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 100))
@@ -71,11 +91,16 @@ net.Receive("openlogs", function(len)
         draw.RoundedBox(0, 0, 0, w, h, Color(10, 10, 10))
     end
 
-    local Info = vgui.Create("DLabel", LogsList1)
-    Info:SetPos(10, 10)
-    Info:SetSize(700, 500)
-    Info:SetTextColor(Color(255, 0, 0))
-    Info:SetText(file.Read("logsys/logs.txt", "DATA"))
+    local infoServer = vgui.Create("DLabel", LogsList1)
+    infoServer:SetPos(10, 10)
+    infoServer:SetSize(700, 900)
+    infoServer:SetTextColor(Color(255, 0, 0))
+    infoServer:SetText(f:Read(f:Size()))
+    local infoPly = vgui.Create("DLabel", LogsList2)
+    infoPly:SetPos(10, 10)
+    infoPly:SetSize(700, 900)
+    infoPly:SetTextColor(Color(255, 0, 0))
+    infoPly:SetText(f:Read(f:Size()))
     local ClosButton = vgui.Create("DButton", frame)
     ClosButton:SetText("Close")
     ClosButton:SetPos(510, 6)
@@ -107,17 +132,17 @@ net.Receive("Eye", function(ply, ent)
             local EyeSight = LocalPlayer():GetEyeTrace()
 
             if EyeSight.Entity:GetClass() == "npc_kleiner" then
-                NPCINFO = "kleiner"
+                NPCinfoServer = "kleiner"
             elseif EyeSight.Entity:GetClass() == "npc_vortigaunt" then
-                NPCINFO = "alien"
+                NPCinfoServer = "alien"
             elseif EyeSight.Entity:GetClass() == "npc_eli" then
-                NPCINFO = "eli"
+                NPCinfoServer = "eli"
             elseif EyeSight.Entity:GetClass() == "npc_gman" then
-                NPCINFO = "gman"
+                NPCinfoServer = "gman"
             elseif EyeSight.Entity:GetClass() == "npc_breen" then
-                NPCINFO = "breen"
+                NPCinfoServer = "breen"
             else
-                NPCINFO = "none"
+                NPCinfoServer = "none"
             end
         end)
 
@@ -139,9 +164,9 @@ net.Receive("Eye", function(ply, ent)
                 -- + 135 x-Achse
                 hook.Add("HUDPaint", "DrawFull", function()
                     draw.RoundedBox(20, 0, 0, 700, 50, Color(0, 0, 0, 250))
-                    -- draw.SimpleText("Infos:", "MainFont", ScrW() - 120, (ScrH() / 2) - 280, Color(255, 0, 0))
+                    -- draw.SimpleText("infoServers:", "MainFont", ScrW() - 120, (ScrH() / 2) - 280, Color(255, 0, 0))
                     draw.SimpleText("Kills: " .. KillCount, "MainFont", 15, 10, Color(192, 192, 192))
-                    draw.SimpleText("NPC: " .. NPCINFO, "MainFont", 140, 10, Color(192, 192, 192))
+                    draw.SimpleText("NPC: " .. NPCinfoServer, "MainFont", 140, 10, Color(192, 192, 192))
                     -- draw.SimpleText("NPC Health: " .. NPCHealth, "MainFont", 275, 10, Color(144, 238, 144))
                     draw.SimpleText("Ver. Zeit: " .. Time, "MainFont", 325, 10, Color(192, 192, 192))
                     draw.SimpleText("Level: " .. currLevel, "MainFont", 545, 10, Color(192, 192, 192))
@@ -159,13 +184,5 @@ net.Receive("Eye", function(ply, ent)
                 end
             end
         end)
-    end
-end)
-
---draw.SimpleText("Aktuelle Bestzeit: " .. PreTime, "MainFont",
-hook.Add("Initialize", "Datei", function()
-    if not file.Exists("logsys", "DATA") then
-        file.CreateDir("logsys")
-        file.Write("logsys/logs.txt", "------------------------ Log System ------------------------\n")
     end
 end)
