@@ -2,6 +2,7 @@ util.AddNetworkString("Eye")
 util.AddNetworkString("Kills")
 util.AddNetworkString("timeSend")
 util.AddNetworkString("openlogs")
+util.AddNetworkString("SendLogs")
 resource.AddFile("vehicles/enzo/cringe.wav")
 resource.AddFile("vehicles/enzo/levelup.wav")
 resource.AddWorkshop("128089118") --M9K Weapons
@@ -13,15 +14,18 @@ local AbleToPlay = true
 
 PlayerModels = {"npc_kleiner", "npc_eli", "npc_breen"}
 
---npc_vortigaunt
-hook.Add("PlayerInitialSpawn", "PlayerConnect", function(plyy)
+hook.Add("PlayerInitialSpawn", "PlayerConnect", function(ply)
     timer.Simple(3, function()
         for k, v in pairs(player.GetAll()) do
             v:ChatPrint("Um das Spiel zu starten musst du !start in den Chat schreiben")
         end
-        file.Append("logsys/serverlogs.txt", "\n[ " .. TimeString .. "] " .. plyy:Name() .. "" .. " (" .. plyy:SteamID() .. ") hat sich auf den Server verbunden.\n")
-        plyy:StripWeapons()
-        plyy:Spectate(6)
+
+        file.Append("logsys/test.txt", "\n[ " .. TimeString .. "] " .. ply:Name() .. "" .. " (" .. ply:SteamID() .. ") hat sich auf den Server verbunden.\n")
+        net.Start("SendLogs")
+        net.WriteString("PlayerInitial")
+        net.Send(ply)
+        ply:StripWeapons()
+        ply:Spectate(6)
     end)
 end)
 
@@ -81,7 +85,8 @@ if (AbleToPlay) then
             prop:Remove()
             game.CleanUpMap()
             timer.Stop("NpcSpawn")
-            Time = 0
+            Timegerundet = 0
+            time = 0
 
             return ""
         end
@@ -106,7 +111,8 @@ end
 --local ZufallsPlayer = math.random(1, #player.GetAll())
 for k, v in ipairs(player.GetAll()) do
     timer.Simple(5, function()
-        v:SetModel("models/Police.mdl")
+        v:SetModel("models/player/police_fem.mdl")
+        v:PhysicsInit(SOLID_VPHYSICS)
     end)
 end
 
@@ -116,7 +122,6 @@ function Main(ply)
 
     if roundStat == 1 and IsSpawning == 1 then
         ply:UnSpectate()
-        file.Append("logsys/serverlogs.txt", " [ " .. TimeString .. "] Level 1 wurde von " .. ply:Name() .. " gestartet\n")
         ply:Freeze(true)
         ply:SetPos(Vector(23.519316, 178.790863, -83.970474)) -- Player TP 
         net.Start("Eye")
@@ -137,7 +142,9 @@ function Main(ply)
 
             for i = 1, 2 do
                 local RandomXYPos = Vector(math.random(-332, -850), math.random(-150, 400), 1)
-                file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] NPC Spawned\n")
+                net.Start("SendLogs")
+                net.WriteString("NPCSpawns")
+                net.Send(ply)
                 NPC = ents.Create(table.Random(PlayerModels))
                 NPC:SetPos(RandomXYPos)
                 NPC:DropToFloor()
@@ -187,7 +194,9 @@ function Main(ply)
 
         if CheckIfSpawned ~= 1 then
             SpawnTableFunction()
-            file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] Prop successfully Spawned\n")
+            net.Start("SendLogs")
+            net.WriteString("PropSpawn")
+            net.Send(ply)
         else
             print("Prop already spawned")
         end
@@ -246,7 +255,7 @@ function Main(ply)
 
         hook.Add("OnNPCKilled", "Kills", function(victim, attacker, weapon)
             KillCount = KillCount + 1
-            file.Append("logsys/serverlogs.txt", "[ " .. TimeString .. "] " .. victim:GetClass() .. " wurde von " .. attacker:GetName() .. " mit einer " .. ply:GetActiveWeapon():GetClass() .. " getötet.\n")
+            file.Append("logsys/playerlogs.txt", "[ " .. TimeString .. "] " .. victim:GetClass() .. " wurde von " .. attacker:GetName() .. " mit einer " .. ply:GetActiveWeapon():GetClass() .. " getötet.\n")
             net.Start("Kills")
             net.WriteUInt(KillCount, 4)
             net.WriteString("TimeStart")
@@ -267,7 +276,9 @@ function Main(ply)
 
         hook.Add("PlayerDisconnected", "PlayerDC", function(plyy)
             prop:Remove()
-            file.Append("logsys/serverlogs.txt", plyy:Name() .. "Hat den Server verlassen")
+            net.Start("SendLogs")
+            net.WriteString("PlayerDC")
+            net.Send(plyy)
         end)
     end
 
@@ -280,3 +291,10 @@ function Main(ply)
         end
     end)
 end
+
+hook.Add("Initialize", "DateiTest", function()
+    if not file.Exists("logsys", "DATA") then
+        file.CreateDir("logsys")
+        file.Write("logsys/test.txt", "------------------------ Test ------------------------\n")
+    end
+end)
