@@ -213,3 +213,10 @@ net.Receive("Eye", function(ply, len, ent)
         end)
     end
 end)
+
+
+net.Receive("send_start_message", function()
+    local tab = net.ReadTable() or {}
+    local argTab = unpack(tab) -- this will turn the table into a var arg
+    chat.AddText(argTab)
+end)
