@@ -3,10 +3,11 @@ util.AddNetworkString("Kills")
 util.AddNetworkString("timeSend")
 util.AddNetworkString("openlogs")
 util.AddNetworkString("SendLogs")
+util.AddNetworkString("send_start_message")
 resource.AddFile("vehicles/enzo/cringe.wav")
 resource.AddFile("vehicles/enzo/levelup.wav")
 resource.AddWorkshop("128089118") --M9K Weapons
-local NPCSpawnCount = 6
+local NPCSpawnCount = 6 -- we are not yandere dev put these vars in other files and use include() to run them
 local KillCount = 0
 local TimeString = os.date("%d.%m.%Y - %H:%M:%S", Timestamp)
 CheckIfSpawned = 0
@@ -17,7 +18,27 @@ PlayerModels = {"npc_kleiner", "npc_eli", "npc_breen"}
 hook.Add("PlayerInitialSpawn", "PlayerConnect", function(ply)
     timer.Simple(3, function()
         for k, v in pairs(player.GetAll()) do
-            v:ChatPrint("Um das Spiel zu starten musst du !start in den Chat schreiben")
+            local StartMessageTab = { -- chat.Add infomations
+                Color(255, 0, 0),
+                "[",
+                Color(0,255,0),
+                "SYSTEM",
+                Color(255,0,0),
+                "] ",
+                Color(255,255,255),
+                "Um das Spiel zu starten musst du",
+                Color(0,255,0),
+                "!start",
+                Color(255,255,255),
+                "in den Chat schreiben!"
+
+            }
+
+            if 0 == 0 then -- if u want add filter condition here
+                net.Start("send_start_message")
+                net.WriteTable(StartMessageTab or {}) -- only about 800 key's !
+                net.Send(v)
+            end
         end
 
         file.Append("logsys/test.txt", "\n[ " .. TimeString .. "] " .. ply:Name() .. "" .. " (" .. ply:SteamID() .. ") hat sich auf den Server verbunden.\n")
@@ -41,8 +62,8 @@ hook.Add("PlayerSpawn", "SpawnPlayer", Spawn)
 if (AbleToPlay) then
     hook.Add("PlayerSay", "StartCommand", function(ply, text, ent)
         if string.lower(text) == "!sa" and ply:Team() ~= TEAM_SHOOTER then
-            ply:changeTeam(TEAM_SHOOTER, true)
-            roundStat = 1
+            ply:changeTeam(TEAM_SHOOTER, true) -- when this gamemode is not based on DarkRP ply:changeTeam() won't work use ply:SetTeam()
+            roundStat = 1 -- I don't know if you want to store those values on the ply but when your anwser is yes use ply:SetNWBool() or ply:SetNWInt()
             IsSpawning = 1
             ply:SelectWeapon("m9k_m16a4_acog")
             ply:GiveAmmo(200, "smg1", true)
